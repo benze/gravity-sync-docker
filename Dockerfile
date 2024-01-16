@@ -28,6 +28,6 @@ ENTRYPOINT ["/init"]
 ##### Install gravity-sync
 RUN curl -sSL https://raw.githubusercontent.com/vmstan/gs-install/main/gs-install.sh | GS_DOCKER=1 bash
 
-COPY root/etc /etc
-COPY root/usr/local/bin/_gs_cron /usr/local/bin
+COPY src/etc /etc
+COPY src/usr/local/bin/_gs_cron /usr/local/bin
 COPY gravity-sync /usr/local/bin
