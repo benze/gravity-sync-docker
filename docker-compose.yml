@@ -1,0 +1,146 @@
+# Test-containers for development of sync-hole
+
+version: "3.8"
+services:
+  pihole:
+    image: pihole/pihole
+    hostname: main
+    container_name: pihole-a
+    restart: unless-stopped
+    environment:
+      WEBPASSWORD: "admin"
+      # (Re)-enable GS, when a config file exists in the system
+      GS_AUTO_ENABLE: true
+      GS_AUTO_DEBUG: true
+    ports:
+      # Webinterface on HOST of main
+      - "8080:80"
+      - "5553:53/tcp"
+      - "5553:53/udp"
+    volumes:
+      - ./data/pihole/etc/pihole:/etc/pihole
+      - ./data/pihole/etc/dnsmasq.d:/etc/dnsmasq.d:rw
+
+
+  main:
+    image: gs
+    build: .
+    hostname: main
+    restart: unless-stopped
+    environment:
+      GS_AUTO_ENABLE: true
+      GS_AUTO_DEBUG: true
+      LOCAL_PIHOLE_TYPE: "podman"
+      REMOTE_PIHOLE_TYPE: "podman"
+      LOCAL_DOCKER_CONTAINER: "pihole-a"
+      REMOTE_DOCKER_CONTAINER: "pihole-a"
+      LOCAL_DOCKER_BINARY: "/usr/local/bin/docker"
+      REMOTE_DOCKER_BINARY: "/usr/local/bin/docker"
+      LOCAL_PODMAN_BINARY: "/usr/local/bin/docker"
+      REMOTE_PODMAN_BINARY: "/usr/local/bin/docker"
+      LOCAL_FILE_OWNER: "999:1000"
+      REMOTE_FILE_OWNER: "999:1000"
+      REMOTE_HOST: "host.docker.internal"
+      REMOTE_USER: "gs"
+      GS_SSH_PORT: 2222
+      GS_SSH_PKIF: "~/.ssh/id_ed25519"
+
+    ports:
+      # SSH port on HOST of main (for DEBUGGING)
+      - "2222:22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - ./data/gsync:/config:rw
+      - ./data/pihole/etc/pihole:/etc/pihole
+      - ./data/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
+      - ~/.ssh/id_ed25519.pub:/config/home/.ssh/authorized_keys:ro
+      - ~/.ssh/id_ed25519:/config/.ssh/id_ed25519:ro
+      - ./gravity-sync:/usr/local/bin/gravity-sync
+
+
+
+  slave:
+    image: gs
+    build: .
+    hostname: main
+    restart: unless-stopped
+    environment:
+      # (Re)-enable GS, when a config file exists in the system
+      GS_AUTO_ENABLE: true
+      GS_AUTO_DEBUG: true
+      LOCAL_DOCKER_BINARY: "/usr/local/bin/docker"
+      REMOTE_DOCKER_BINARY: "/usr/local/bin/docker"
+      REMOTE_HOST: "host.docker.internal"
+      REMOTE_USER: "gs"
+      GS_SSH_PORT: 2222
+      GS_SSH_PKIF: "~/.ssh/id_ed25519"
+    ports:
+      # SSH port on HOST of main (for DEBUGGING)
+      - "2223:22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - ./config:/config:rw
+
+
+#    networks:
+#      static:
+#          ipv4_address: 10.0.0.101
+##
+#  secondary:
+#    image: sync-hole
+#    build: .
+#    container_name: secondary
+#    hostname: secondary
+#    restart: unless-stopped
+#    environment:
+#      WEBPASSWORD: "admin"
+#      # (Re)-enable GS, when a config file exists in the system
+#      GS_AUTO_ENABLE: true
+#      GS_AUTO_DEBUG: true
+#    ports:
+#      # Webinterface on HOST of secondary
+#      - "8081:80"
+#      - "5554:53/tcp"
+#      - "5554:53/udp"
+#      # SSH port on HOST of secondary (for DEBUGGING)
+#      - "2223:2222"
+#    networks:
+#      static:
+#          ipv4_address: 10.0.0.102
+#
+##sync-hole test network
+#networks:
+#  static:
+#    ipam:
+#      config:
+#        - subnet: 10.0.0.0/24
+    
+# Once the containers are started up, run the following
+
+### Retrieve link password
+# docker exec -it main cat password
+# docker exec -it secondary cat password
+
+### Link main to secondary & enable automatic mode
+# docker exec -it main gravity-sync configure
+#   Enter IP of secondary: 10.0.0.102
+#   Enter SSH user: gs
+#   Confirm authenticity of host: Write 'yes'
+#   Enter the link password of 'secondary'
+# Now enable the automatic sync
+# docker exec -it main gravity-sync auto
+
+### OPTIONAL (but suggested): Link secondary to main & enable automatic mode
+# docker exec -it secondary gravity-sync configure
+#   Enter IP of main: 10.0.0.101
+#   Enter SSH user: gs
+#   Confirm authenticity of host: Write 'yes'
+#   Enter the link password of 'main'
+# Now enable the automatic sync
+# docker exec -it secondary gravity-sync auto
+
+# If you want to oberseve the automatic sync, run
+# docker exec -it main gravity-sync monitor
+# docker exec -it secondary gravity-sync monitor

@@ -1,3 +1,10 @@
+## [4.0.0] - 15-01-2023
+### Changed
+- Complete rewrite to support GravitySync 4.0+
+- Uses s6-overlay to launch scripts
+- Runs isolated in a Docker-In-Docker container
+- Requires access to persistence files from pi-hole container
+
 ## [3.6.2] - 21-03-2022
 ### Changed
 - Update to GravitySync version 3.6.2
