@@ -2,7 +2,7 @@
 
 version: "3.8"
 services:
-  pihole:
+  pihole-main:
     image: pihole/pihole
     build:
       dockerfile: Dockerfile-pihole
@@ -15,19 +15,48 @@ services:
       GS_AUTO_ENABLE: true
       GS_AUTO_DEBUG: true
     ports:
-      # Webinterface on HOST of main
+#      # Webinterface on HOST of main
       - "8080:80"
-      - "5553:53/tcp"
-      - "5553:53/udp"
+#      - "5553:53/tcp"
+#      - "5553:53/udp"
     volumes:
-      - ./data/pihole/etc/pihole:/etc/pihole
-      - ./data/pihole/etc/dnsmasq.d:/etc/dnsmasq.d:rw
+      - ./data/main/pihole/etc/pihole:/etc/pihole
+      - ./data/main/pihole/etc/dnsmasq.d:/etc/dnsmasq.d:rw
+
+    networks:
+      pihole:
+        ipv4_address: 172.99.0.10
+
+  pihole-secondary:
+    image: pihole/pihole
+    hostname: main
+    container_name: pihole-b
+    restart: unless-stopped
+    environment:
+      WEBPASSWORD: "admin"
+      # (Re)-enable GS, when a config file exists in the system
+      GS_AUTO_ENABLE: true
+      GS_AUTO_DEBUG: true
+    ports:
+#      # Webinterface on HOST of main
+      - "8081:80"
+#      - "5553:53/tcp"
+#      - "5553:53/udp"
+    volumes:
+      - ./data/secondary/pihole/etc/pihole:/etc/pihole
+      - ./data/secondary/pihole/etc/dnsmasq.d:/etc/dnsmasq.d:rw
+
+    networks:
+      pihole:
+        ipv4_address: 172.99.0.20
 
 
-  main:
+
+
+  gs-main:
     image: gs
     build: .
-    hostname: main
+    hostname: gs-a
     restart: unless-stopped
     environment:
       GS_AUTO_ENABLE: true
@@ -35,16 +64,13 @@ services:
       LOCAL_PIHOLE_TYPE: "podman"
       REMOTE_PIHOLE_TYPE: "podman"
       LOCAL_DOCKER_CONTAINER: "pihole-a"
-      REMOTE_DOCKER_CONTAINER: "pihole-a"
-      LOCAL_DOCKER_BINARY: "/usr/local/bin/docker"
-      REMOTE_DOCKER_BINARY: "/usr/local/bin/docker"
-      LOCAL_PODMAN_BINARY: "/usr/local/bin/docker"
-      REMOTE_PODMAN_BINARY: "/usr/local/bin/docker"
+      REMOTE_DOCKER_CONTAINER: "pihole-b"
+
       LOCAL_FILE_OWNER: "999:1000"
       REMOTE_FILE_OWNER: "999:1000"
-      REMOTE_HOST: "host.docker.internal"
+      REMOTE_HOST: "gs-b"
       REMOTE_USER: "gs"
-      GS_SSH_PORT: 2222
+      GS_SSH_PORT: 22
       GS_SSH_PKIF: "~/.ssh/id_ed25519"
 
     ports:
@@ -53,37 +79,61 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime:ro
-      - ./data/gsync:/config:rw
-      - ./data/pihole/etc/pihole:/etc/pihole
-      - ./data/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
+      - ./data/main/gsync:/config:rw
+      - ./data/main/pihole/etc/pihole:/etc/pihole
+      - ./data/main/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
       - ~/.ssh/id_ed25519.pub:/config/home/.ssh/authorized_keys:ro
       - ~/.ssh/id_ed25519:/config/.ssh/id_ed25519:ro
-      - ./gravity-sync:/usr/local/bin/gravity-sync
+#      - ./gravity-sync:/usr/local/bin/gravity-sync
 
+    networks:
+      pihole:
 
-
-  slave:
+  gs-secondary:
     image: gs
     build: .
-    hostname: main
+    hostname: gs-b
     restart: unless-stopped
     environment:
-      # (Re)-enable GS, when a config file exists in the system
       GS_AUTO_ENABLE: true
       GS_AUTO_DEBUG: true
-      LOCAL_DOCKER_BINARY: "/usr/local/bin/docker"
-      REMOTE_DOCKER_BINARY: "/usr/local/bin/docker"
-      REMOTE_HOST: "host.docker.internal"
+      LOCAL_PIHOLE_TYPE: "podman"
+      REMOTE_PIHOLE_TYPE: "podman"
+      LOCAL_DOCKER_CONTAINER: "pihole-b"
+      REMOTE_DOCKER_CONTAINER: "pihole-a"
+
+      LOCAL_FILE_OWNER: "999:1000"
+      REMOTE_FILE_OWNER: "999:1000"
+      REMOTE_HOST: "gs-a"
       REMOTE_USER: "gs"
-      GS_SSH_PORT: 2222
+      GS_SSH_PORT: 22
       GS_SSH_PKIF: "~/.ssh/id_ed25519"
+
     ports:
       # SSH port on HOST of main (for DEBUGGING)
       - "2223:22"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/localtime:/etc/localtime:ro
-      - ./config:/config:rw
+      - ./data/secondary/gsync:/config:rw
+      - ./data/secondary/pihole/etc/pihole:/etc/pihole
+      - ./data/secondary/pihole/etc/dnsmasq.d:/etc/dnsmasq.d
+      - ~/.ssh/id_ed25519.pub:/config/home/.ssh/authorized_keys:ro
+      - ~/.ssh/id_ed25519:/config/.ssh/id_ed25519:ro
+#      - ./gravity-sync:/usr/local/bin/gravity-sync
+
+    networks:
+      pihole:
+
+
+
+networks:
+  pihole:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.99.0.0/16
 
 
 #    networks:
