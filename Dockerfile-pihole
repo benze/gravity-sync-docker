@@ -1,5 +1,9 @@
 FROM pihole/pihole
 
+# Hack to update pihole version of `sed` to 4.8+.  Sed 4.7 has a bug which causes temporary files on FUSE mounts (ex: macOs) to have permissions of 0
+# and unreadable.  So update sed from bookworm repo.
+#
+# see https://forums.docker.com/t/sed-couldnt-open-temporary-file-xyz-permission-denied-when-using-virtiofs/125473/5
 RUN echo deb http://ftp.de.debian.org/debian bookworm main >> /etc/apt/sources.list && \
     apt update && \
     apt -y install sed
