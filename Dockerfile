@@ -1,4 +1,4 @@
-FROM docker:24.0.7-dind-alpine3.19
+FROM docker:24.0.7-dind-alpine3.19 as base
 ARG TARGETPLATFORM
 
 #RUN apt update && apt install --no-install-recommends --yes bash openssh-server execline git sudo rsync curl xz-utils wget
@@ -28,6 +28,9 @@ ENTRYPOINT ["/init"]
 ##### Install gravity-sync
 RUN curl -sSL https://raw.githubusercontent.com/vmstan/gs-install/main/gs-install.sh | GS_DOCKER=1 bash
 
+# patch gravity-sync script to not auto-detect if type already specified
+RUN /bin/sed -i -E 's/(function[[:space:]]*detect_local_pihole[[:space:]]*\{)/\1\n[ ! -z "$\{LOCAL_PIHOLE_TYPE\}" ] \&\& return\n/' /usr/local/bin/gravity-sync
+RUN /bin/sed -i -E 's/(function[[:space:]]*detect_remote_pihole[[:space:]]*\{)/\1\n[ ! -z "$\{REMOTE_PIHOLE_TYPE\}" ] \&\& return\n/' /usr/local/bin/gravity-sync
+
 COPY src/etc /etc
 COPY src/usr/local/bin/_gs_cron /usr/local/bin
-COPY gravity-sync /usr/local/bin
