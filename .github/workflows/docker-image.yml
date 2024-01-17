@@ -6,11 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
-  
 
 jobs:
 
   build:
+    env:
+      date: $(date +%s)
 
     runs-on: ubuntu-latest
 
@@ -23,9 +24,13 @@ jobs:
         run: |
           docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
 
+      # All steps after this one will have env variable `GHA_BRANCH` passed to them.
+      - run:   echo $(date %s) ---- $date
+        shell: bash
+
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ${{ github.event.repository.name }}:$(date +%s)
+        run: docker build  --file Dockerfile --tag ${{secrets.DOCKERHUB_USER}}/${{ github.event.repository.name }}:$(date +%s) .
 
 
       - name: Docker Push
-        run: docker push ${{secrets.DOCKERHUB_USER}}/${{ github.event.repository.name}}
+        run: docker push ${{secrets.DOCKERHUB_USER}}/${{ github.event.repository.name}}:$(date +%s)
