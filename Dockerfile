@@ -29,8 +29,28 @@ ENTRYPOINT ["/init"]
 RUN curl -sSL https://raw.githubusercontent.com/vmstan/gs-install/main/gs-install.sh | GS_DOCKER=1 bash
 
 # patch gravity-sync script to not auto-detect if type already specified
-RUN /bin/sed -i -E 's/(function[[:space:]]*detect_local_pihole[[:space:]]*\{)/\1\n[ ! -z "$\{LOCAL_PIHOLE_TYPE\}" ] \&\& return\n/' /usr/local/bin/gravity-sync
-RUN /bin/sed -i -E 's/(function[[:space:]]*detect_remote_pihole[[:space:]]*\{)/\1\n[ ! -z "$\{REMOTE_PIHOLE_TYPE\}" ] \&\& return\n/' /usr/local/bin/gravity-sync
+RUN /bin/sed -i -E 's/(function[[:space:]]*detect_local_pihole[[:space:]]*\{)/\1\n[ ! -z "$\{LOCAL_PIHOLE_TYPE\}" ] \&\& return\n/' /usr/local/bin/gravity-sync && \
+    /bin/sed -i -E 's/(function[[:space:]]*detect_remote_pihole[[:space:]]*\{)/\1\n[ ! -z "$\{REMOTE_PIHOLE_TYPE\}" ] \&\& return\n/' /usr/local/bin/gravity-sync
 
+# create an empty gravity-sync file so that all params are loaded from env vars
+RUN touch /etc/gravity-sync/gravity-sync.conf
+
+## create links to docker executable where gravity-script expecting to find them
+RUN ln -s /usr/local/bin/docker /usr/local/bin/podman
+
+# Use podman PiHole type as the logic in Gravity-Sync for podman or a docker-in-docker process are the same
+ENV LOCAL_DOCKER_BINARY /usr/local/bin/docker
+ENV LOCAL_PODMAN_BINARY /usr/local/bin/podman
+ENV REMOTE_DOCKER_BINARY /usr/local/bin/docker
+ENV REMOTE_PODMAN_BINARY /usr/local/bin/podman
+ENV LOCAL_PIHOLE_TYPE "podman"
+ENV REMOTE_PIHOLE_TYPE "podman"
+ENV REMOTE_USER "gravityscript"
+ENV LOCAL_USER "gravityscript"
+ENV LOCAL_FILE_OWNER: "999:1000"
+ENV REMOTE_FILE_OWNER: "999:1000"
+
+# Copy startup scripts and configurations
 COPY src/etc /etc
-COPY src/usr/local/bin/_gs_cron /usr/local/bin
+COPY src/usr /usr
+

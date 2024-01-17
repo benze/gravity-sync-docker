@@ -19,7 +19,7 @@ function is_true {
 }
 
 # Local username for SSH access
-LOCAL_USER=${LOCAL_USER:-"gs"}
+LOCAL_USER=${LOCAL_USER:-"gravityscript"}
 PASSWORD_RANDOM_LEN=16
 # Minimal password length, when manually set via docker. If you really hate yourself and shit on security, you lower this value. Ideally you rely on the radomly generated password (anyway only required once), that changes every container start and is at last RANDOM_PASSWORD_LEN long
 PASSWORD_MIN_LEN=${PASSWORD_MIN_LEN:-8}
@@ -36,16 +36,6 @@ if [[ ! -L /etc/ssh ]]; then
     ln -s /config/ssh_host_keys /etc/ssh
     ssh-keygen -A
 fi
-
-# create an empty gravity-sync file so that all params are loaded from env vars
-touch /etc/gravity-sync/gravity-sync.conf
-
-# create links to docker executable where gravity-script expecting to find them
-docker_links=("/usr/bin/docker" "/usr/bin/podman" "/usr/local/bin/podman")
-for target in "${docker_links[@]}" ; do
-  ln -s /usr/local/bin/docker $target
-done
-
 
 # symlink root's ssh config (known_hosts): root is u``sed ``in the container to run gravity-sync and needs to remember the remote hosts key-fingerprint across docker-container updates
 if [[ ! -L /root/.ssh ]]; then
