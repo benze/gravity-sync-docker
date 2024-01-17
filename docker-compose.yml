@@ -4,6 +4,8 @@ version: "3.8"
 services:
   pihole:
     image: pihole/pihole
+    build:
+      dockerfile: Dockerfile-pihole
     hostname: main
     container_name: pihole-a
     restart: unless-stopped
