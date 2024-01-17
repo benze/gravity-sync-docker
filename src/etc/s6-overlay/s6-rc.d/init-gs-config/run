@@ -19,13 +19,15 @@ function is_true {
 }
 
 # Local username for SSH access
-LOCAL_USER=${LOCAL_USER:-"gravityscript"}
+LOCAL_USER=${LOCAL_USER:-"gravitysync"}
 PASSWORD_RANDOM_LEN=16
 # Minimal password length, when manually set via docker. If you really hate yourself and shit on security, you lower this value. Ideally you rely on the radomly generated password (anyway only required once), that changes every container start and is at last RANDOM_PASSWORD_LEN long
 PASSWORD_MIN_LEN=${PASSWORD_MIN_LEN:-8}
 
 # Prepare persistent storage (ssh keys, gravity-sync config, known_hosts)
 mkdir -p /config/{.ssh,home/.ssh,ssh_host_keys,gravity-sync}
+# create an empty config file if one not already present
+[ ! -f /config/gravity-sync/gravity-sync.conf ] && touch /config/gravity-sync/gravity-sync.conf
 
 # symlink ssh config directory & generate host keys
 if [[ ! -L /etc/ssh ]]; then

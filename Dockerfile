@@ -45,10 +45,11 @@ ENV REMOTE_DOCKER_BINARY /usr/local/bin/docker
 ENV REMOTE_PODMAN_BINARY /usr/local/bin/podman
 ENV LOCAL_PIHOLE_TYPE "podman"
 ENV REMOTE_PIHOLE_TYPE "podman"
-ENV REMOTE_USER "gravityscript"
-ENV LOCAL_USER "gravityscript"
+ENV REMOTE_USER "gravitysync"
+ENV LOCAL_USER "gravitysync"
 ENV LOCAL_FILE_OWNER: "999:1000"
 ENV REMOTE_FILE_OWNER: "999:1000"
+ENV GS_ETC_PATH /config/gravity-sync
 
 # Copy startup scripts and configurations
 COPY src/etc /etc
