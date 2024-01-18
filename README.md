@@ -1,7 +1,13 @@
-[![CI Pipeline](https://github.com/nh-mike/gravity-sync-docker/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/nh-mike/gravity-sync-docker/actions/workflows/ci-pipeline.yml)
+[![CI Pipeline](https://github.com/benze/gravity-sync-docker/actions/workflows/docker-image.yml/badge.svg)](https://github.com//benze/gravity-sync-docker/actions/workflows/docker-image.yml)
 # Gravity Sync Docker
 
+https://github.com/benze/gravity-sync-docker
+
 These are the files required to run a Docker image running [Gravity Sync](https://github.com/vmstan/gravity-sync). Supports X86/64 and ARM.
+
+Heavily inspired by:
+- https://github.com/systemofapwne/gravity-sync
+- https://github.com/nh-mike/gravity-sync-docker
 
 
 ## Purpose of the container
